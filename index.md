@@ -47,6 +47,21 @@ do\_this\_and\_do\_that\_and\_another\_thing
 
 GFM will autolink standard URLs, so if you want to link to a URL (instead of setting link text), you can simply enter the URL and it will be turned into a link to that URL.
 
+### Fenced code blocks
+
+Markdown converts text with four spaces at the front of each line to code blocks. GFM supports that, but we also support fenced blocks. Just wrap your code blocks in <code>\`\`\`</code> and you won't need to indent manually to trigger a code block.
+
+### Syntax highlighting
+
+We take code blocks a step further and add syntax highlighting if you request it. In your fenced block, add an optional language identifier and we'll run it through syntax highlighting. For example, to syntax highlight Ruby code:
+
+    ```ruby
+    require 'redcarpet'
+    markdown = Redcarpet.new("Hello World!")
+    puts markdown.to_html
+    ```
+
+
 A bit of the GitHub spice
 -------------------------
 
