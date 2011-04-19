@@ -14,6 +14,8 @@ If you prefer to learn by example, see the following source and result:
 
 You can also use our [live javascript preview](http://github.github.com/github-flavored-markdown/preview.html) to see GFM in action.
 
+If you're interested in how we render Markdown files, you might want to check out [Redcarpet](https://github.com/tanoku/redcarpet), our Ruby interface to the [Upskirt](https://www.github.com/tanoku/upskirt) library.
+
 Differences from traditional Markdown
 -------------------------------------
 
