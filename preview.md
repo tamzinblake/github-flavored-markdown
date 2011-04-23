@@ -7,6 +7,13 @@ This page provides a live GFM preview, rendered client-side using javascript.
 The majority of the credit goes to the wonderful [Showdown](http://attacklab.net/showdown/) script, which handles the meat of the processing.
 GFM modifications for newlines, underscore-words, autolinking and GitHub SHA1/issue link syntaxes were added.
 
+<p class="warn">
+  GitHub now has previews on all inputs that use GFM.
+  <strong>This live preview should be considered depreciated.</strong>
+  It may not render exactly the same way github.com
+  will due to differences in markdown libraries.
+</p>
+
 User input
 ----------
 
