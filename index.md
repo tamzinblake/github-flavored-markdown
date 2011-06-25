@@ -3,7 +3,7 @@ title: Introduction
 layout: default
 ---
 
-#It's made from butter and love
+#It's made from love
 
 GitHub uses what we're calling "GitHub Flavored Markdown" (GFM) for messages, issues, and comments. It differs from standard Markdown (SM) in a few significant ways and adds some additional functionality.
 
