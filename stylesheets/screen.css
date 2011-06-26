@@ -2,30 +2,35 @@ ul {list-style-position: inside;}
 .sidebar { float:right; width: 338px;}
 
 .cheatsheet {
-width:298px;
+width:338px;
 margin-top: 40px;
-padding: 20px;
-border: 1px #666 solid;
+
+border: 1px #eee solid;
 border-radius: 3px;
 -moz-border-radius: 3px;
 -webkit-border-radius: 3px;
 
-background: #EEE; 
 
-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#EEE', endColorstr='#aaaaaa'); 
-background: -webkit-gradient(linear, left top, left bottom, from(#EEE), to(#aaaaaa));
-background: -moz-linear-gradient(top,  #EEE,  #aaaaaa); 
 }
 
 .cheatsheet h2 {
 margin-top: 0;
 color: #666;
 text-shadow: white 1px 1px 0px;
+
+background: #EEE; 
+
+filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#EEE', endColorstr='#aaaaaa'); 
+background: -webkit-gradient(linear, left top, left bottom, from(#EEE), to(#aaaaaa));
+background: -moz-linear-gradient(top,  #EEE,  #aaaaaa); 
+
+padding:10px;
 }
 
 .cheatsheet p {
 margin-bottom: 0;
 color: #666;
+padding: 0 10px 15px 10px;
 }
 
 #user_input, #html_result {
