@@ -46,10 +46,7 @@ margin-top: 15px;
 padding: 10px;
 }
 
-.warn {
-width: 560px;
-
-padding: 4px;
-border: 1px solid #600;
-background: #caa;
+.warn strong {
+color:red;
+}
 
