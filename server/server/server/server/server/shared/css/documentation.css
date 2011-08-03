@@ -371,7 +371,7 @@ div.sidebar-module ul ul li span {
 }
 
 #footer .upper_footer ul.footer_nav h4 {
-  margin-bottom: 5px;
+  margin: 0 0 5px 0;
   padding-bottom: 5px;
   border-bottom: thin solid #e1e1e1;
 }
