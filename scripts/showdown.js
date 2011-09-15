@@ -1038,6 +1038,58 @@ var _DoCodeSpans = function(text) {
 }
 
 
+var _DoBacktickCodeBlocks = function(text) {
+//
+//   *  Backtick quotes are used for <code></code> spans.
+//
+//   *  You can use multiple backticks as the delimiters if you want to
+//	 include literal backticks in the code span. So, this input:
+//
+//		 Just type ``foo `bar` baz`` at the prompt.
+//
+//	   Will translate to:
+//
+//		 <p>Just type <code>foo `bar` baz</code> at the prompt.</p>
+//
+//	There's no arbitrary limit to the number of backticks you
+//	can use as delimters. If you need three consecutive backticks
+//	in your code, use four for delimiters, etc.
+//
+//  *  You can use spaces to get literal backticks at the edges:
+//
+//		 ... type `` `bar` `` ...
+//
+//	   Turns to:
+//
+//		 ... type <code>`bar`</code> ...
+//
+
+	/*
+		text = text.replace(/
+			(^|[^\\])					// Character before opening ` can't be a backslash
+			(`+)						// $2 = Opening run of `
+			(							// $3 = The code block
+				[^\r]*?
+				[^`]					// attacklab: work around lack of lookbehind
+			)
+			\2							// Matching closer
+			(?!`)
+		/gm, function(){...});
+	*/
+
+	text = text.replace(/(^|[^\\])(`+)([^\r]*?[^`])\2(?!`)/gm,
+		function(wholeMatch,m1,m2,m3,m4) {
+			var c = '\0\0\0\0' + m3 + '\0\0\0\0';
+			c = c.replace(/\0\0\0\0([ \t]*)/,""); // leading whitespace
+			c = c.replace(/[ \t]*\0\0\0\0/,""); // trailing whitespace
+			c = _EncodeCode(c);
+			return m1+"<pre><code>"+c+"</code></pre>";
+		});
+
+	return text;
+}
+
+
 var _EncodeCode = function(text) {
 //
 // Encode/escape certain characters inside Markdown code runs.
@@ -1142,7 +1194,7 @@ var _FormParagraphs = function(text) {
 	text = text.replace(/\n+$/g,"");
 
         // Do code block stuff early
-        text = _DoCodeSpans(text);
+        text = _DoBacktickCodeBlocks(text);
 
         var grafs = text.split(/\n{2,}/g);
 	var grafsOut = new Array();
