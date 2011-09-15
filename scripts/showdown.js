@@ -1027,9 +1027,9 @@ var _DoCodeSpans = function(text) {
 
 	text = text.replace(/(^|[^\\])(`+)([^\r]*?[^`])\2(?!`)/gm,
 		function(wholeMatch,m1,m2,m3,m4) {
-			var c = m3;
-			c = c.replace(/^([ \t]*)/g,"");	// leading whitespace
-			c = c.replace(/[ \t]*$/g,"");	// trailing whitespace
+			var c = '\0\0\0\0' + m3 + '\0\0\0\0';
+			c = c.replace(/\0\0\0\0([ \t]*)/,""); // leading whitespace
+			c = c.replace(/[ \t]*\0\0\0\0/,""); // trailing whitespace
 			c = _EncodeCode(c);
 			return m1+"<code>"+c+"</code>";
 		});
