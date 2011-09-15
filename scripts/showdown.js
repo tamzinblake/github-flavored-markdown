@@ -1141,7 +1141,10 @@ var _FormParagraphs = function(text) {
 	text = text.replace(/^\n+/g,"");
 	text = text.replace(/\n+$/g,"");
 
-	var grafs = text.split(/\n{2,}/g);
+        // Do code block stuff early
+        text = _DoCodeSpans(text);
+
+        var grafs = text.split(/\n{2,}/g);
 	var grafsOut = new Array();
 
 	//
@@ -1156,8 +1159,8 @@ var _FormParagraphs = function(text) {
 			grafsOut.push(str);
 		}
 		else if (str.search(/\S/) >= 0) {
-			str = _RunSpanGamut(str);
-			str = str.replace(/\n/g,"<br />");  // ** GFM **
+                        str = _RunSpanGamut(str);
+		        str = str.replace(/\n/g,"<br />");  // ** GFM **
 			str = str.replace(/^([ \t]*)/g,"<p>");
 			str += "</p>"
 			grafsOut.push(str);
