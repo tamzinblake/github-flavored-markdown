@@ -1077,7 +1077,7 @@ var _DoBacktickCodeBlocks = function(text) {
 		/gm, function(){...});
 	*/
 
-  text = text.replace(/(^|[^\\])(`+)\s*(\w*)([^\r]*?[^`])\2(?!`)/gm,
+  text = text.replace(/(^|[^\\])(`+)[ ]*(\w*)([^\r]*?[^`])\2(?!`)/gm,
 		      function(wholeMatch,m1,m2,m3,m4,m5) {
 			var c = '\0\0\0\0' + m4 + '\0\0\0\0';
 			c = c.replace(/\0\0\0\0([ \t]*)/,""); // leading whitespace
