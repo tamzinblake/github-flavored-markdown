@@ -1077,12 +1077,12 @@ var _DoBacktickCodeBlocks = function(text) {
 		/gm, function(){...});
 	*/
 
-	text = text.replace(/(^|[^\\])(`+)([^\r]*?[^`])\2(?!`)/gm,
-		function(wholeMatch,m1,m2,m3,m4) {
-			var c = '\0\0\0\0' + m3 + '\0\0\0\0';
+  text = text.replace(/(^|[^\\])(`+)\s*(\w*)([^\r]*?[^`])\2(?!`)/gm,
+		      function(wholeMatch,m1,m2,m3,m4,m5) {
+			var c = '\0\0\0\0' + m4 + '\0\0\0\0';
 			c = c.replace(/\0\0\0\0([ \t]*)/,""); // leading whitespace
 			c = c.replace(/[ \t]*\0\0\0\0/,""); // trailing whitespace
-			c = _EncodeCode(c);
+			c = _EncodeCode(c, m2);
 			return m1+"<pre><code>"+c+"</code></pre>";
 		});
 
@@ -1090,12 +1090,13 @@ var _DoBacktickCodeBlocks = function(text) {
 }
 
 
-var _EncodeCode = function(text) {
+var _EncodeCode = function(text, syntax) {
 //
 // Encode/escape certain characters inside Markdown code runs.
 // The point is that in code, these characters are literals,
 // and lose their special Markdown meanings.
 //
+// 'syntax' reserved for future syntax highlighting
 	// Encode all ampersands; HTML entities are not
 	// entities within a Markdown code span.
 	text = text.replace(/&/g,"&amp;");
