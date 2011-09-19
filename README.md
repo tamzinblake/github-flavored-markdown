@@ -3,11 +3,11 @@ See:
 
 As an npm package:
 
-    npm install github-flavored-markdown
+    npm install ghm
 
 And then in your node program:
 
-    var ghm = require("github-flavored-markdown")
+    var ghm = require("ghm")
     ghm.parse("I **love** GHM.\n\n#2", "isaacs/npm")
     // returns:
     // '<p>I <strong>love</strong> GHM.  '+
