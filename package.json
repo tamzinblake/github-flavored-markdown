@@ -1,6 +1,6 @@
 {
   "name": "ghm",
-  "version": "1.0.0",
+  "version": "1.0.0-1",
   "description": "github-flavored-markdown maintained by thomblake",
   "author": "tekkup (http://tekkub.net/) <git@tekkub.net>",
   "main": "./scripts/showdown.js",
