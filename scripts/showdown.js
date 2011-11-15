@@ -148,346 +148,6 @@ Showdown.converter = function () {
       }
 
   // A home for long-winded regex replacement functions
-  var reFn =
-      { url: function (wholeMatch,matchIndex) {
-          var left = text.slice(0, matchIndex)
-            , right = text.slice(matchIndex)
-          if (left.match(/<[^>]+$/) && right.match(/^[^>]*>/)) {
-            return wholeMatch
-          }
-          href = wholeMatch.replace( /^http:\/\/github.com\//
-                                   , "https://github.com/"
-                                   )
-          return "<a href='" + href + "'>" + wholeMatch + "</a>"
-        }
-      , email: function (wholeMatch) {
-          return "<a href='mailto:" + wholeMatch + "'>" + wholeMatch + "</a>"
-        }
-      , sha1: function (wholeMatch,matchIndex) {
-          if ( typeof(GitHub) == "undefined"
-            || typeof(GitHub.nameWithOwner) == "undefined" ) {
-            return wholeMatch
-          }
-          var left = text.slice(0, matchIndex)
-            , right = text.slice(matchIndex)
-          if ( left.match(/@$/)
-            || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
-            return wholeMatch
-          }
-          return "<a href='http://github.com/" + GitHub.nameWithOwner
-               + "/commit/" + wholeMatch + "'>"
-               + wholeMatch.substring(0,7) + "</a>"
-        }
-      , userSha1: function (wholeMatch,username,sha,matchIndex) {
-          if ( typeof(GitHub) == "undefined"
-            || typeof(GitHub.nameWithOwner) == "undefined" ) {
-            return wholeMatch
-          }
-          GitHub.repoName = GitHub.repoName || _GetRepoName()
-          var left = text.slice(0, matchIndex)
-            , right = text.slice(matchIndex)
-          if ( left.match(/\/$/)
-            || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
-            return wholeMatch
-          }
-          return "<a href='http://github.com/" + username + "/"
-               + GitHub.repoName + "/commit/" + sha + "'>" + username
-               + "@" + sha.substring(0,7) + "</a>"
-        }
-      , repoSha1: function (wholeMatch,repo,sha) {
-          return "<a href='http://github.com/" + repo + "/commit/"
-               + sha + "'>" + repo + "@" + sha.substring(0,7) + "</a>"
-        }
-      , issue: function (wholeMatch,issue,matchIndex) {
-          if ( typeof(GitHub) == "undefined"
-            || typeof(GitHub.nameWithOwner) == "undefined") {
-            return wholeMatch
-          }
-          var left = text.slice(0, matchIndex)
-            , right = text.slice(matchIndex)
-          if ( left == "" || left.match(/[a-z0-9_\-+=.]$/)
-                          || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) )
-             ) {
-            return wholeMatch
-          }
-          return "<a href='http://github.com/" + GitHub.nameWithOwner
-               + "/issues/#issue/" + issue + "'>" + wholeMatch + "</a>"
-        }
-      , userIssue: function (wholeMatch,username,issue,matchIndex) {
-          if ( typeof(GitHub) == "undefined"
-            || typeof(GitHub.nameWithOwner) == "undefined" ) {
-            return wholeMatch
-          }
-          GitHub.repoName = GitHub.repoName || _GetRepoName()
-          var left = text.slice(0, matchIndex)
-            , right = text.slice(matchIndex)
-          if ( left.match(/\/$/)
-            || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
-            return wholeMatch
-          }
-          return "<a href='http://github.com/" + username
-               + "/" + GitHub.repoName + "/issues/#issue/"
-               + issue + "'>" + wholeMatch + "</a>"
-        }
-      , repoIssue: function (wholeMatch,repo,issue) {
-          return "<a href='http://github.com/" + repo + "/issues/#issue/"
-               + issue + "'>" + wholeMatch + "</a>"
-        }
-      , linkDef: function (wholeMatch,m1,m2,m3,m4) {
-          m1 = m1.toLowerCase()
-          // Link IDs are case-insensitive
-          g_urls[m1] = _EncodeAmpsAndAngles(m2)
-          if (m3) {
-            // found blank lines, so it's not a title.
-            // Put back the parenthetical statement
-            return m3 + m4
-          }
-          else if (m4) {
-            g_titles[m1] = m4.replace(/"/g,"&quot;")
-          }
-          // Completely remove the definition from the text
-          return ""
-        }
-      , hashElement: function (wholeMatch,m1) {
-          var blockText = m1
-          // Undo double lines
-          blockText = blockText.replace(/\n\n/g,"\n")
-          blockText = blockText.replace(/^\n/,"")
-          // strip trailing blank lines
-          blockText = blockText.replace(/\n+$/g,"")
-          // Replace the element text with a marker ("~KxK" where x is its key)
-          blockText = "\n\n~K" + (g_html_blocks.push(blockText)-1) + "K\n\n"
-          return blockText
-        }
-      , html: function (wholeMatch) {
-          var tag = wholeMatch.replace(/(.)<\/?code>(?=.)/g, "$1`")
-          tag = escapeCharacters(tag,"\\`*_")
-          return tag
-        }
-      , writeAnchorTag: function (wholeMatch,m1,m2,m3,m4,m5,m6,m7) {
-          if (m7 == undefined) m7 = ""
-          var whole_match = m1
-            , link_text   = m2
-            , link_id     = m3.toLowerCase()
-            , url         = m4
-            , title       = m7
-
-          if (url == "") {
-            if (link_id == "") {
-              // lower-case and turn embedded newlines into spaces
-              link_id = link_text.toLowerCase().replace(/ ?\n/g," ")
-            }
-            url = "#"+link_id
-
-            if (g_urls[link_id] != undefined) {
-              url = g_urls[link_id]
-              if (g_titles[link_id] != undefined) {
-                title = g_titles[link_id]
-              }
-            }
-            else {
-              if (whole_match.search(/\(\s*\)$/m)>-1) {
-                // Special case for explicit empty url
-                url = ""
-              }
-              else {
-                return whole_match
-              }
-            }
-          }
-
-          url = escapeCharacters(url,"*_")
-          var result = "<a href=\"" + url + "\""
-
-          if (title != "") {
-            title = title.replace(/"/g,"&quot;")
-            title = escapeCharacters(title,"*_")
-            result +=  " title=\"" + title + "\""
-          }
-          result += ">" + link_text + "</a>"
-          return result
-        }
-      , writeImageTag: function (wholeMatch,m1,m2,m3,m4,m5,m6,m7) {
-          var whole_match = m1
-          var alt_text    = m2
-          var link_id     = m3.toLowerCase()
-          var url         = m4
-          var title       = m7
-
-          if (!title) title = ""
-
-          if (url == "") {
-            if (link_id == "") {
-              // lower-case and turn embedded newlines into spaces
-              link_id = alt_text.toLowerCase().replace(/ ?\n/g," ")
-            }
-            url = "#"+link_id
-
-            if (g_urls[link_id] != undefined) {
-              url = g_urls[link_id]
-              if (g_titles[link_id] != undefined) {
-                title = g_titles[link_id]
-              }
-            }
-            else {
-              return whole_match
-            }
-          }
-
-          alt_text = alt_text.replace(/"/g,"&quot;")
-          url = escapeCharacters(url,"*_")
-          var result = "<img src=\"" + url + "\" alt=\"" + alt_text + "\""
-
-          // attacklab: Markdown.pl adds empty title attributes to images.
-          // Replicate this bug.
-
-          //if (title != "") {
-          title = title.replace(/"/g,"&quot;")
-          title = escapeCharacters(title,"*_")
-          result +=  " title=\"" + title + "\""
-          //}
-
-          result += " />"
-
-          return result
-        }
-      , setextH1: function (wholeMatch,m1) {
-          return hashBlock("<h1>" + _RunSpanGamut(m1) + "</h1>")
-        }
-      , setextH2: function (matchFound,m1) {
-          return hashBlock("<h2>" + _RunSpanGamut(m1) + "</h2>")
-        }
-      , atxHeader: function (wholeMatch,m1,m2) {
-          var h_level = m1.length
-          return hashBlock( "<h" + h_level + ">" + _RunSpanGamut(m2) + "</h"
-                          + h_level + ">"
-                          )
-        }
-      , list: function (wholeMatch,m1,m2) {
-          var list = m1
-          var list_type = (m2.search(/[*+-]/g)>-1) ? "ul" : "ol"
-
-          // Turn double returns into triple returns,
-          //  so that we can make a
-          // paragraph for the last item in a list,
-          //  if necessary:
-          list = list.replace(/\n{2,}/g,"\n\n\n")
-          var result = _ProcessListItems(list)
-
-          // Trim any trailing whitespace, to put the closing `</$list_type>`
-          // up on the preceding line, to get it past the current stupid
-          // HTML block parser. This is a hack to work around the terrible
-          // hack that is the HTML block parser.
-          result = result.replace(/\s+$/,"")
-          result = "<"+list_type+">" + result + "</"+list_type+">\n"
-          return result
-        }
-      , list2: function (wholeMatch,m1,m2,m3) {
-          var runup = m1
-          var list = m2
-
-          var list_type = (m3.search(/[*+-]/g)>-1) ? "ul" : "ol"
-          // Turn double returns into triple returns, so that we can make a
-          // paragraph for the last item in a list, if necessary:
-          list = list.replace(/\n{2,}/g,"\n\n\n")
-          var result = _ProcessListItems(list)
-          result = runup + "<"+list_type+">\n" + result + "</"+list_type+">\n"
-          return result
-        }
-      , listStr: function (wholeMatch,m1,m2,m3,m4) {
-          var item = m4
-          var leading_line = m1
-          var leading_space = m2
-          if (leading_line || (item.search(/\n{2,}/)>-1)) {
-            item = _RunBlockGamut(_Outdent(item))
-          }
-          else {
-            // Recursion for sub-lists:
-            item = _DoLists(_Outdent(item))
-            item = item.replace(/\n$/,"") // chomp(item)
-            item = _RunSpanGamut(item)
-          }
-          return  "<li>" + item + "</li>\n"
-        }
-      , codeBlock: function (wholeMatch,m1,m2) {
-          var codeblock = m1
-          var nextChar = m2
-          codeblock = _EncodeCode( _Outdent(codeblock))
-          codeblock = _Detab(codeblock)
-          codeblock = codeblock.replace(/^\n+/g,"") // trim leading newlines
-          codeblock = codeblock.replace(/\n+$/g,"") // trim trailing whitespace
-          codeblock = "<pre><code>" + codeblock + "\n</code></pre>"
-          return hashBlock(codeblock) + nextChar
-        }
-      , codeSpan: function (wholeMatch,m1,m2,m3,m4) {
-          var c = '\0\0\0\0' + m3 + '\0\0\0\0'
-          c = c.replace(/\0\0\0\0([ \t]*)/,"") // leading whitespace
-          c = c.replace(/[ \t]*\0\0\0\0/,"") // trailing whitespace
-          c = _EncodeCode(c)
-          return m1 + "<code>" + c + "</code>"
-        }
-      , fenced: function (wholeMatch,m1,m2,m3,m4,m5) {
-          var c = '\0\0\0\0' + m4 + '\0\0\0\0'
-          c = c.replace(/\0\0\0\0([ \t]*)/,"") // leading whitespace
-          c = c.replace(/[ \t]*\0\0\0\0/,"") // trailing whitespace
-          c = _EncodeCode(c, m2)
-          return m1 + "<pre><code>" + c + "</code></pre>"
-        }
-      , blockQuote: function (wholeMatch,m1) {
-          var bq = m1
-          // attacklab: hack around Konqueror 3.5.4 bug:
-          // "----------bug".replace(/^-/g,"") == "bug"
-          bq = bq.replace(/^[ \t]*>[ \t]?/gm,"~0") // trim one level of quoting
-          // attacklab: clean up hack
-          bq = bq.replace(/~0/g,"")
-          bq = bq.replace(/^[ \t]+$/gm,"")  // trim whitespace-only lines
-          bq = _RunBlockGamut(bq)    // recurse
-          bq = bq.replace(/(^|\n)/g,"$1  ")
-          // These leading spaces screw with <pre> content, so we need to fix
-          bq = bq.replace(re.pre, reFn.pre)
-          return hashBlock("<blockquote>\n" + bq + "\n</blockquote>")
-        }
-      , pre: function (wholeMatch,m1) {
-          var pre = m1
-          // attacklab: hack around Konqueror 3.5.4 bug:
-          pre = pre.replace(/^  /mg,"~0")
-          pre = pre.replace(/~0/g,"")
-          return pre
-        }
-      , autoEmail: function (wholeMatch,m1) {
-          return _EncodeEmailAddress(_UnescapeSpecialChars(m1))
-        }
-      , addr: function (ch) {
-          if (ch == "@") {
-            // this *must* be encoded. I insist.
-            ch = encode[Math.floor(Math.random()*2)](ch)
-          }
-          else if (ch !=":") {
-            // leave ':' alone (to spot mailto: later)
-            var r = Math.random()
-            // roughly 10% raw, 45% hex, 45% dec
-            ch =  (
-              r > .9  ? encode[2](ch)   :
-                r > .45 ? encode[1](ch)   :
-                encode[0](ch)
-            )
-          }
-          return ch
-        }
-      , special:
-        function (wholeMatch,m1) {
-          var charCodeToReplace = parseInt(m1)
-          return String.fromCharCode(charCodeToReplace)
-        }
-      , anchor: function(wholeMatch,m1,m2) {
-          var leadingText = m1
-          var numSpaces = 4 - leadingText.length % 4  // attacklab: g_tab_width
-          // there *must* be a better way to do this:
-          for (var i=0; i<numSpaces; i++) leadingText+=" "
-          return leadingText
-        }
-
-      }
 
   // isaacs - Allow passing in the GitHub object as an argument.
   this.makeHtml = function (text, gh) {
@@ -553,44 +213,135 @@ Showdown.converter = function () {
     text = text.replace(/~T/g,"~")
 
     // ** GFM **  Auto-link URLs and emails
-    text = text.replace(re.url, reFn.url)
-    text = text.replace(re.email, reFn.email)
+    text = text.replace(re.url, function (wholeMatch,matchIndex) {
+             var left = text.slice(0, matchIndex)
+               , right = text.slice(matchIndex)
+             if (left.match(/<[^>]+$/) && right.match(/^[^>]*>/)) {
+               return wholeMatch
+             }
+             var href = wholeMatch.replace( /^http:\/\/github.com\//
+                                          , "https://github.com/"
+                                          )
+             return "<a href='" + href + "'>" + wholeMatch + "</a>"
+           })
+
+    text = text.replace(re.email, function (wholeMatch) {
+             return "<a href='mailto:" + wholeMatch + "'>" + wholeMatch + "</a>"
+           })
 
     // ** GFM ** Auto-link sha1 if GitHub.nameWithOwner is defined
-    text = text.replace(re.sha1, reFn.sha1)
+    text = text.replace(re.sha1, function (wholeMatch,matchIndex) {
+             if ( typeof(GitHub) == "undefined"
+               || typeof(GitHub.nameWithOwner) == "undefined" ) {
+               return wholeMatch
+             }
+             var left = text.slice(0, matchIndex)
+               , right = text.slice(matchIndex)
+             if ( left.match(/@$/)
+               || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
+               return wholeMatch
+             }
+             return "<a href='http://github.com/" + GitHub.nameWithOwner
+                  + "/commit/" + wholeMatch + "'>"
+                  + wholeMatch.substring(0,7) + "</a>"
+           })
 
     // ** GFM ** Auto-link user@sha1 if GitHub.nameWithOwner is defined
-    text = text.replace(re.userSha1, reFn.userSha1)
+    text = text.replace(re.userSha1, function (wholeMatch,username,sha,matchIndex) {
+             if ( typeof(GitHub) == "undefined"
+               || typeof(GitHub.nameWithOwner) == "undefined" ) {
+               return wholeMatch
+             }
+             GitHub.repoName = GitHub.repoName || _GetRepoName()
+             var left = text.slice(0, matchIndex)
+               , right = text.slice(matchIndex)
+             if ( left.match(/\/$/)
+               || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
+               return wholeMatch
+             }
+             return "<a href='http://github.com/" + username + "/"
+                  + GitHub.repoName + "/commit/" + sha + "'>" + username
+                  + "@" + sha.substring(0,7) + "</a>"
+           })
 
     // ** GFM ** Auto-link user/repo@sha1
-    text = text.replace(re.repoSha1, reFn.repoSha1)
+    text = text.replace(re.repoSha1, function (wholeMatch,repo,sha) {
+             return "<a href='http://github.com/" + repo + "/commit/"
+                  + sha + "'>" + repo + "@" + sha.substring(0,7) + "</a>"
+           })
 
     // ** GFM ** Auto-link #issue if GitHub.nameWithOwner is defined
-    text = text.replace(re.issue, reFn.issue)
+    text = text.replace(re.issue, function (wholeMatch,issue,matchIndex) {
+             if ( typeof(GitHub) == "undefined"
+               || typeof(GitHub.nameWithOwner) == "undefined") {
+               return wholeMatch
+             }
+             var left = text.slice(0, matchIndex)
+               , right = text.slice(matchIndex)
+             if ( left == "" || left.match(/[a-z0-9_\-+=.]$/)
+                             || ( left.match(/<[^>]+$/)
+                               && right.match(/^[^>]*>/) )) {
+               return wholeMatch
+             }
+             return "<a href='http://github.com/" + GitHub.nameWithOwner
+                  + "/issues/#issue/" + issue + "'>" + wholeMatch + "</a>"
+           })
 
     // ** GFM ** Auto-link user#issue if GitHub.nameWithOwner is defined
-    text = text.replace(re.userIssue, reFn.userIssue)
+    text = text.replace(re.userIssue, function (wholeMatch,username,issue,matchIndex) {
+             if ( typeof(GitHub) == "undefined"
+               || typeof(GitHub.nameWithOwner) == "undefined" ) {
+               return wholeMatch
+             }
+             GitHub.repoName = GitHub.repoName || _GetRepoName()
+             var left = text.slice(0, matchIndex)
+               , right = text.slice(matchIndex)
+             if ( left.match(/\/$/)
+               || ( left.match(/<[^>]+$/) && right.match(/^[^>]*>/) ) ) {
+               return wholeMatch
+             }
+             return "<a href='http://github.com/" + username
+                  + "/" + GitHub.repoName + "/issues/#issue/"
+                  + issue + "'>" + wholeMatch + "</a>"
+           })
 
     // ** GFM ** Auto-link user/repo#issue
-    text = text.replace(re.repoIssue, reFn.repoIssue)
+    text = text.replace(re.repoIssue, function (wholeMatch,repo,issue) {
+             return "<a href='http://github.com/" + repo + "/issues/#issue/"
+                  + issue + "'>" + wholeMatch + "</a>"
+           })
 
     return text
   }
 
-  var _GetRepoName = function () {
+  function _GetRepoName () {
     return GitHub.nameWithOwner.match(/^.+\/(.+)$/)[1]
   }
 
-  var _StripLinkDefinitions = function (text) {
+  function _StripLinkDefinitions (text) {
     // Strips link definitions from text, stores the URLs and titles in
     // hash references.
     // Link defs are in the form: ^[id]: url "optional title"
-    var rv = text.replace(re.linkDef, reFn.linkDef)
+    var rv = text.replace(re.linkDef, function (wholeMatch,m1,m2,m3,m4) {
+               m1 = m1.toLowerCase()
+               // Link IDs are case-insensitive
+               g_urls[m1] = _EncodeAmpsAndAngles(m2)
+               if (m3) {
+                 // found blank lines, so it's not a title.
+                 // Put back the parenthetical statement
+                 return m3 + m4
+               }
+               else if (m4) {
+                 g_titles[m1] = m4.replace(/"/g,"&quot;")
+               }
+               // Completely remove the definition from the text
+               return ""
+             })
     return rv
   }
 
 
-  var _HashHTMLBlocks = function(text) {
+  function _HashHTMLBlocks (text) {
     // attacklab: Double up blank lines to reduce lookaround
     text = text.replace(/\n/g,"\n\n")
 
@@ -617,28 +368,40 @@ Showdown.converter = function () {
     // We need to do this before the next, more liberal match, because the next
     // match will start at the first `<div>` and stop at the first `</div>`.
 
+    function hashElement (wholeMatch,m1) {
+      var blockText = m1
+      // Undo double lines
+      blockText = blockText.replace(/\n\n/g,"\n")
+      blockText = blockText.replace(/^\n/,"")
+      // strip trailing blank lines
+      blockText = blockText.replace(/\n+$/g,"")
+      // Replace the element text with a marker "~KxK" where x is its key
+      blockText = "\n\n~K" + (g_html_blocks.push(blockText)-1) + "K\n\n"
+      return blockText
+    }
+
     // attacklab: This regex can be expensive when it fails.
-    text = text.replace(re.nested, reFn.hashElement)
+    text = text.replace(re.nested, hashElement)
 
     // Now match more liberally, simply from `\n<tag>` to `</tag>\n`
-    text = text.replace(re.liberal, reFn.hashElement)
+    text = text.replace(re.liberal, hashElement)
 
     // Special case just for <hr />. It was easier to make a special case than
     // to make the other regex more complicated.
-    text = text.replace(re.hr, reFn.hashElement)
+    text = text.replace(re.hr, hashElement)
 
     // Special case for standalone HTML comments:
-    text = text.replace(re.comment, reFn.hashElement)
+    text = text.replace(re.comment, hashElement)
 
     // PHP and ASP-style processor instructions (<?...?> and <%...%>)
-    text = text.replace(re.processor, reFn.hashElement)
+    text = text.replace(re.processor, hashElement)
 
     // attacklab: Undo double lines (see comment at top of this function)
     text = text.replace(/\n\n/g,"\n")
     return text
   }
 
-  var _RunBlockGamut = function(text) {
+  function _RunBlockGamut (text) {
     // These are all the transformations that form block-level
     // tags like paragraphs, headers, and list items.
     text = _DoHeaders(text)
@@ -663,7 +426,7 @@ Showdown.converter = function () {
     return text
   }
 
-  var _RunSpanGamut = function(text) {
+  function _RunSpanGamut (text) {
     // These are all the transformations that occur *within* block-level
     // tags like paragraphs, headers, and list items.
 
@@ -689,45 +452,137 @@ Showdown.converter = function () {
     return text
   }
 
-  var _EscapeSpecialCharsWithinTagAttributes = function(text) {
+  function _EscapeSpecialCharsWithinTagAttributes (text) {
     // Within tags -- meaning between < and > -- encode [\ ` * _] so they
     // don't conflict with their use in Markdown for code, italics and strong.
-    text = text.replace(re.html, reFn.html)
+    text = text.replace(re.html, function (wholeMatch) {
+             var tag = wholeMatch.replace(/(.)<\/?code>(?=.)/g, "$1`")
+             tag = escapeCharacters(tag,"\\`*_")
+             return tag
+           })
     return text
   }
 
-  var _DoAnchors = function (text) {
+  function _DoAnchors (text) {
     // Turn Markdown link shortcuts into XHTML <a> tags.
 
+    function writeAnchorTag (wholeMatch,m1,m2,m3,m4,m5,m6,m7) {
+      if (m7 == undefined) m7 = ""
+      var whole_match = m1
+        , link_text   = m2
+        , link_id     = m3.toLowerCase()
+        , url         = m4
+        , title       = m7
+
+      if (url == "") {
+        if (link_id == "") {
+          // lower-case and turn embedded newlines into spaces
+          link_id = link_text.toLowerCase().replace(/ ?\n/g," ")
+        }
+        url = "#"+link_id
+
+        if (g_urls[link_id] != undefined) {
+          url = g_urls[link_id]
+          if (g_titles[link_id] != undefined) {
+            title = g_titles[link_id]
+          }
+        }
+        else {
+          if (whole_match.search(/\(\s*\)$/m)>-1) {
+            // Special case for explicit empty url
+            url = ""
+          }
+          else {
+            return whole_match
+          }
+        }
+      }
+
+      url = escapeCharacters(url,"*_")
+      var result = "<a href=\"" + url + "\""
+
+      if (title != "") {
+        title = title.replace(/"/g,"&quot;")
+        title = escapeCharacters(title,"*_")
+        result +=  " title=\"" + title + "\""
+      }
+      result += ">" + link_text + "</a>"
+      return result
+    }
+
     // First, handle reference-style links: [link text] [id]
-    text = text.replace(re.referenceLink, reFn.writeAnchorTag)
+    text = text.replace(re.referenceLink, writeAnchorTag)
 
     // Next, inline-style links: [link text](url "optional title")
-    text = text.replace(re.inlineLink, reFn.writeAnchorTag)
+    text = text.replace(re.inlineLink, writeAnchorTag)
 
     // Last, handle reference-style shortcuts: [link text]
     // These must come last in case you've also got [link test][1]
     // or [link test](/foo)
-    text = text.replace(re.shortcutLink, reFn.writeAnchorTag)
+    text = text.replace(re.shortcutLink, writeAnchorTag)
 
     return text
   }
 
-  var _DoImages = function(text) {
+  function _DoImages (text) {
     // Turn Markdown image shortcuts into <img> tags.
 
+    function writeImageTag (wholeMatch,m1,m2,m3,m4,m5,m6,m7) {
+      var whole_match = m1
+      var alt_text    = m2
+      var link_id     = m3.toLowerCase()
+      var url         = m4
+      var title       = m7
+
+      if (!title) title = ""
+
+      if (url == "") {
+        if (link_id == "") {
+          // lower-case and turn embedded newlines into spaces
+          link_id = alt_text.toLowerCase().replace(/ ?\n/g," ")
+        }
+        url = "#"+link_id
+
+        if (g_urls[link_id] != undefined) {
+          url = g_urls[link_id]
+          if (g_titles[link_id] != undefined) {
+            title = g_titles[link_id]
+          }
+        }
+        else {
+          return whole_match
+        }
+      }
+
+      alt_text = alt_text.replace(/"/g,"&quot;")
+      url = escapeCharacters(url,"*_")
+      var result = "<img src=\"" + url + "\" alt=\"" + alt_text + "\""
+
+      // attacklab: Markdown.pl adds empty title attributes to images.
+      // Replicate this bug.
+
+      //if (title != "") {
+      title = title.replace(/"/g,"&quot;")
+      title = escapeCharacters(title,"*_")
+      result +=  " title=\"" + title + "\""
+      //}
+
+      result += " />"
+
+      return result
+    }
+
     // First, handle reference-style labeled images: ![alt text][id]
-    text = text.replace(re.referenceImage, reFn.writeImageTag)
+    text = text.replace(re.referenceImage, writeImageTag)
 
     // Next, handle inline images:  ![alt text](url "optional title")
     // Don't forget: encode * and _
-    text = text.replace(re.inlineImage, reFn.writeImageTag)
+    text = text.replace(re.inlineImage, writeImageTag)
 
     return text
   }
 
-  var _DoHeaders = function(text) {
-
+  function _DoHeaders (text) {
     // Setext-style headers:
     // Header 1
     // ========
@@ -735,8 +590,12 @@ Showdown.converter = function () {
     // Header 2
     // --------
     //
-    text = text.replace(re.setextH1, reFn.setextH1)
-    text = text.replace(re.setextH2, reFn.setextH2)
+    text = text.replace(re.setextH1, function (wholeMatch,m1) {
+             return hashBlock("<h1>" + _RunSpanGamut(m1) + "</h1>")
+           })
+    text = text.replace(re.setextH2, function (matchFound,m1) {
+             return hashBlock("<h2>" + _RunSpanGamut(m1) + "</h2>")
+           })
 
     // atx-style headers:
     //  # Header 1
@@ -746,31 +605,63 @@ Showdown.converter = function () {
     //  ###### Header 6
     //
 
-    text = text.replace(re.atxHeader, reFn.atxHeader)
+    text = text.replace(re.atxHeader, function (wholeMatch,m1,m2) {
+             var h_level = m1.length
+             return hashBlock( "<h" + h_level + ">" + _RunSpanGamut(m2) + "</h"
+                             + h_level + ">"
+                             )
+           })
 
     return text
   }
 
-  // This declaration keeps Dojo compressor from outputting garbage:
-  var _ProcessListItems
-
-  var _DoLists = function (text) {
+  function _DoLists (text) {
     // Form HTML ordered (numbered) and unordered (bulleted) lists.
     // attacklab: add sentinel to hack around khtml/safari bug:
     // http://bugs.webkit.org/show_bug.cgi?id=11231
     text += "~0"
     if (g_list_level) {
-      text = text.replace(re.list, reFn.list)
+      text = text.replace(re.list, function (wholeMatch,m1,m2) {
+               var list = m1
+               var list_type = (m2.search(/[*+-]/g)>-1) ? "ul" : "ol"
+
+               // Turn double returns into triple returns,
+               //  so that we can make a
+               // paragraph for the last item in a list,
+               //  if necessary:
+               list = list.replace(/\n{2,}/g,"\n\n\n")
+               var result = _ProcessListItems(list)
+
+               // Trim any trailing whitespace, to put the closing </$list_type>
+               // up on the preceding line, to get it past the current stupid
+               // HTML block parser. This is a hack to work around the terrible
+               // hack that is the HTML block parser.
+               result = result.replace(/\s+$/,"")
+               result = "<"+list_type+">" + result + "</"+list_type+">\n"
+               return result
+             })
     }
     else {
-      text = text.replace(re.list2, reFn.list2)
+      text = text.replace(re.list2, function (wholeMatch,m1,m2,m3) {
+               var runup = m1
+               var list = m2
+
+               var list_type = (m3.search(/[*+-]/g)>-1) ? "ul" : "ol"
+               // Turn double returns into triple returns, so that we can make a
+               // paragraph for the last item in a list, if necessary:
+               list = list.replace(/\n{2,}/g,"\n\n\n")
+               var result = _ProcessListItems(list)
+               result = runup + "<"+list_type+">\n"
+                      + result + "</"+list_type+">\n"
+               return result
+             })
     }
     // attacklab: strip sentinel
     text = text.replace(/~0/,"")
     return text
   }
 
-  _ProcessListItems = function (list_str) {
+  function _ProcessListItems (list_str) {
     //  Process the contents of a single ordered or unordered list, splitting it
     //  into individual list items.
     //
@@ -800,29 +691,52 @@ Showdown.converter = function () {
     list_str = list_str.replace(/\n{2,}$/,"\n")
     // attacklab: add sentinel to emulate \z
     list_str += "~0"
-    list_str = list_str.replace(re.listStr, reFn.listStr)
+    list_str = list_str.replace(re.listStr, function (wholeMatch,m1,m2,m3,m4) {
+                 var item = m4
+                 var leading_line = m1
+                 var leading_space = m2
+                 if (leading_line || (item.search(/\n{2,}/)>-1)) {
+                   item = _RunBlockGamut(_Outdent(item))
+                 }
+                 else {
+                   // Recursion for sub-lists:
+                   item = _DoLists(_Outdent(item))
+                   item = item.replace(/\n$/,"") // chomp(item)
+                   item = _RunSpanGamut(item)
+                 }
+                 return  "<li>" + item + "</li>\n"
+               })
     // attacklab: strip sentinel
     list_str = list_str.replace(/~0/g,"")
     g_list_level--
     return list_str
-}
+  }
 
-  var _DoCodeBlocks = function (text) {
+  function _DoCodeBlocks (text) {
     //  Process Markdown `<pre><code>` blocks.
     // attacklab: sentinel workarounds for lack of \A and \Z, safari\khtml bug
     text += "~0"
-    text = text.replace(re.codeBlock, reFn.codeBlock)
+    text = text.replace(re.codeBlock, function (wholeMatch,m1,m2) {
+             var codeblock = m1
+             var nextChar = m2
+             codeblock = _EncodeCode( _Outdent(codeblock))
+             codeblock = _Detab(codeblock)
+             codeblock = codeblock.replace(/^\n+/g,"") // trim leading newlines
+             codeblock = codeblock.replace(/\n+$/g,"") // trim trailing newlines
+             codeblock = "<pre><code>" + codeblock + "\n</code></pre>"
+             return hashBlock(codeblock) + nextChar
+           })
     // attacklab: strip sentinel
     text = text.replace(/~0/,"")
     return text
   }
 
-  var hashBlock = function (text) {
+  function hashBlock (text) {
     text = text.replace(/(^\n+|\n+$)/g,"")
     return "\n\n~K" + (g_html_blocks.push(text)-1) + "K\n\n"
   }
 
-  var _DoCodeSpans = function(text) {
+  function _DoCodeSpans (text) {
     //   *  Backtick quotes are used for <code></code> spans.
     //   *  You can use multiple backticks as the delimiters if you want to
     //  include literal backticks in the code span. So, this input:
@@ -842,21 +756,33 @@ Showdown.converter = function () {
     //    Turns to:
     //
     //   ... type <code>`bar`</code> ...
-    text = text.replace(re.codeSpan, reFn.codeSpan)
+    text = text.replace(re.codeSpan, function (wholeMatch,m1,m2,m3,m4) {
+             var c = '\0\0\0\0' + m3 + '\0\0\0\0'
+             c = c.replace(/\0\0\0\0([ \t]*)/,"") // leading whitespace
+             c = c.replace(/[ \t]*\0\0\0\0/,"") // trailing whitespace
+             c = _EncodeCode(c)
+             return m1 + "<code>" + c + "</code>"
+           })
     return text
   }
 
-  var _DoBacktickCodeBlocks = function (text) {
+  function _DoBacktickCodeBlocks (text) {
     //   *  Backtick quotes are used for <pre><code></code></pre> blocks.
     // There's no arbitrary limit to the number of backticks you
     // can use as delimters. If you need three consecutive backticks
     // in your code, use four for delimiters, etc.
     //
-    text = text.replace(re.fenced, reFn.fenced)
+    text = text.replace(re.fenced, function (wholeMatch,m1,m2,m3,m4,m5) {
+             var c = '\0\0\0\0' + m4 + '\0\0\0\0'
+             c = c.replace(/\0\0\0\0([ \t]*)/,"") // leading whitespace
+             c = c.replace(/[ \t]*\0\0\0\0/,"") // trailing whitespace
+             c = _EncodeCode(c, m2)
+             return m1 + "<pre><code>" + c + "</code></pre>"
+           })
     return text
   }
 
-  var _EncodeCode = function (text, syntax) {
+  function _EncodeCode (text, syntax) {
     // Encode/escape certain characters inside Markdown code runs.
     // The point is that in code, these characters are literals,ee
     // and lose their special Markdown meanings.
@@ -883,7 +809,7 @@ Showdown.converter = function () {
     return text
   }
 
-  var _DoItalicsAndBold = function (text) {
+  function _DoItalicsAndBold (text) {
     // <strong> must go first:
     text = text.replace(re.strong, "<strong>$2</strong>")
     text = text.replace(/(\w)_(\w)/g, "$1~E95E$2") // "~E95E" == escaped "_"
@@ -891,12 +817,31 @@ Showdown.converter = function () {
     return text
   }
 
-  var _DoBlockQuotes = function (text) {
-    text = text.replace(re.blockQuote, reFn.blockQuote)
+  function _DoBlockQuotes (text) {
+    text = text.replace(re.blockQuote, function (wholeMatch,m1) {
+             var bq = m1
+             // attacklab: hack around Konqueror 3.5.4 bug:
+             // "----------bug".replace(/^-/g,"") == "bug"
+             bq = bq.replace(/^[ \t]*>[ \t]?/gm,"~0") // trim one level of quote
+             // attacklab: clean up hack
+             bq = bq.replace(/~0/g,"")
+             bq = bq.replace(/^[ \t]+$/gm,"")  // trim whitespace-only lines
+             bq = _RunBlockGamut(bq)    // recurse
+             bq = bq.replace(/(^|\n)/g,"$1  ")
+             // These leading spaces screw with <pre> content, so we need to fix
+             bq = bq.replace(re.pre, function (wholeMatch,m1) {
+                    var pre = m1
+                    // attacklab: hack around Konqueror 3.5.4 bug:
+                    pre = pre.replace(/^  /mg,"~0")
+                    pre = pre.replace(/~0/g,"")
+                    return pre
+                  })
+             return hashBlock("<blockquote>\n" + bq + "\n</blockquote>")
+           })
     return text
   }
 
-  var _FormParagraphs = function (text) {
+  function _FormParagraphs (text) {
     //  Params:
     //    $text - string to process with html <p> tags
     // Strip leading and trailing lines:
@@ -935,7 +880,7 @@ Showdown.converter = function () {
     return grafsOut.join("\n\n")
   }
 
-  var _EncodeAmpsAndAngles = function (text) {
+  function _EncodeAmpsAndAngles (text) {
     // Smart processing for ampersands and angle brackets to be encoded.
     // Ampersand-encoding based entirely on Nat Irons's Amputator MT plugin:
     //   http://bumppo.net/projects/amputator/
@@ -945,7 +890,7 @@ Showdown.converter = function () {
     return text
   }
 
-  var _EncodeBackslashEscapes = function (text) {
+  function _EncodeBackslashEscapes (text) {
     //   Parameter:  String.
     //   Returns: The string, with after processing the following backslash
     //      escape sequences.
@@ -962,14 +907,16 @@ Showdown.converter = function () {
     return text
   }
 
-  var _DoAutoLinks = function (text) {
+  function _DoAutoLinks (text) {
     text = text.replace(re.autoLink,"<a href=\"$1\">$1</a>")
     // Email addresses: <address@domain.foo>
-    text = text.replace(re.autoEmail, reFn.autoEmail)
+    text = text.replace(re.autoEmail, function (wholeMatch,m1) {
+             return _EncodeEmailAddress(_UnescapeSpecialChars(m1))
+           })
     return text
   }
 
-  var _EncodeEmailAddress = function (addr) {
+  function _EncodeEmailAddress (addr) {
     //  Input: an email address, e.g. "foo@example.com"
     //  Output: the email address as a mailto link, with each character
     // of the address encoded as either a decimal or hex entity, in
@@ -993,20 +940,39 @@ Showdown.converter = function () {
                  ]
 
     addr = "mailto:" + addr
-    addr = addr.replace(/./g, reFn.addr)
+    addr = addr.replace(/./g, function (ch) {
+             if (ch == "@") {
+               // this *must* be encoded. I insist.
+               ch = encode[Math.floor(Math.random()*2)](ch)
+             }
+             else if (ch !=":") {
+               // leave ':' alone (to spot mailto: later)
+               var r = Math.random()
+               // roughly 10% raw, 45% hex, 45% dec
+               ch =  (
+                 r > .9  ? encode[2](ch)   :
+                   r > .45 ? encode[1](ch)   :
+                   encode[0](ch)
+               )
+             }
+             return ch
+           })
     addr = "<a href=\"" + addr + "\">" + addr + "</a>"
     addr = addr.replace(/">.+:/g,"\">") // strip mailto: from visible part
 
     return addr
   }
 
-  var _UnescapeSpecialChars = function (text) {
+  function _UnescapeSpecialChars (text) {
     // Swap back in all the special characters we've hidden.
-    text = text.replace(/~E(\d+)E/g, reFn.special)
+    text = text.replace(/~E(\d+)E/g, function (wholeMatch,m1) {
+             var charCodeToReplace = parseInt(m1)
+             return String.fromCharCode(charCodeToReplace)
+           })
     return text
   }
 
-  var _Outdent = function (text) {
+  function _Outdent (text) {
     // Remove one level of line-leading tabs or spaces
 
     // attacklab: hack around Konqueror 3.5.4 bug:
@@ -1018,7 +984,7 @@ Showdown.converter = function () {
     return text
   }
 
-  var _Detab = function (text) {
+  function _Detab (text) {
     // attacklab: Detab's completely rewritten for speed.
     // In perl we could fix it by anchoring the regexp with \G.
     // In javascript we're less fortunate.
@@ -1028,7 +994,13 @@ Showdown.converter = function () {
     // replace the nth with two sentinels
     text = text.replace(/\t/g,"~A~B")
     // use the sentinel to anchor our regex so it doesn't explode
-    text = text.replace(/~B(.+?)~A/g, reFn.anchor)
+    text = text.replace(/~B(.+?)~A/g, function(wholeMatch,m1,m2) {
+             var leadingText = m1
+             var numSpaces = 4 - leadingText.length % 4 // attacklab:g_tab_width
+             // there *must* be a better way to do this:
+             for (var i=0; i<numSpaces; i++) leadingText+=" "
+             return leadingText
+           })
     // clean up sentinels
     text = text.replace(/~A/g,"    ")  // attacklab: g_tab_width
     text = text.replace(/~B/g,"")
@@ -1037,7 +1009,7 @@ Showdown.converter = function () {
 
   //  attacklab: Utility functions
 
-  var escapeCharacters = function (text, charsToEscape, afterBackslash) {
+  function escapeCharacters (text, charsToEscape, afterBackslash) {
     // First we have to escape the escape characters so that
     // we can build a character class out of them
     var regexString = "([" + charsToEscape.replace(/([\[\]\\])/g,"\\$1") + "])"
@@ -1052,7 +1024,7 @@ Showdown.converter = function () {
     return text
   }
 
-  var escapeCharacters_callback = function(wholeMatch,m1) {
+  function escapeCharacters_callback (wholeMatch,m1) {
     var charCodeToEscape = m1.charCodeAt(0)
     return "~E"+charCodeToEscape+"E"
   }
