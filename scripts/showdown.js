@@ -147,8 +147,6 @@ Showdown.converter = function () {
       , pre: /(\s*<pre>[^\r]+?<\/pre>)/gm
       }
 
-  // A home for long-winded regex replacement functions
-
   // isaacs - Allow passing in the GitHub object as an argument.
   this.makeHtml = function (text, gh) {
     if (typeof gh !== "undefined") {
