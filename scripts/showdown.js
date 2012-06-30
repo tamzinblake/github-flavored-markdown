@@ -73,6 +73,12 @@
 // Modifications are **everywhere**
 // **************************************************
 
+// **************************************************
+// AMD compatibility by Casey Duncan
+//
+// Modifications are **AMD**
+// **************************************************
+
 // Showdown namespace
 var Showdown = {}
 
@@ -84,6 +90,18 @@ if (typeof exports === "object") {
     var converter = new Showdown.converter()
     return converter.makeHtml(md, gh)
   }
+}
+
+// AMD: define showdown module
+if (typeof define === 'function' && define.amd) {
+  define(function() {
+    // All we want to do is parse, really
+    Showdown.parse = function(md, gh) {
+      var converter = new Showdown.converter();
+      return converter.makeHtml(md, gh);
+    }
+    return Showdown;
+  });
 }
 
 // isaacs: Declare "GitHub" object in here, since Node modules
