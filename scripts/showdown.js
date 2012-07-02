@@ -9,13 +9,9 @@
 // Redistributable under a BSD-style open source license.
 // See license.txt for more information.
 //
-// The full source distribution is at:
+// Apres fork from: 
 //
-//    A A L
-//    T C A
-//    T K B
-//
-//   <http://www.attacklab.net/>
+// https://github.com/apres/github-flavored-markdown
 
 //
 // Wherever possible, Showdown is a straight, line-by-line port
