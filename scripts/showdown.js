@@ -152,7 +152,7 @@ Showdown.converter = function () {
       , listStr: /(\n)?(^[ \t]*)([*+-]|\d+[.])[ \t]+([^\r]+?(\n{1,2}))(?=\n*(~0|\2([*+-]|\d+[.])[ \t]+))/gm
       , codeBlock: /(?:\n\n|^)((?:(?:[ ]{4}|\t).*\n+)+)(\n*[ ]{0,3}[^ \t\n]|(?=~0))/g
       , codeSpan: /(^|[^\\])(`+)([^\r]*?[^`])\2(?!`)/gm
-      , fenced: /\s*```(\w*)\s*$([\s\S]*)$\s*```\s*$/gm
+      , fenced: /\s*(`+)\s*(\w*)\s*$([\s\S]*?)$\s*\1\s*$/gm
       , strong: /(\*\*|__)(?=\S)([^\r]*?\S[*_]*)\1/g
       , em: /(\*|_)(?=\S)([^\r]*?\S)\1/g
       , blockQuote: /((^[ \t]*>[ \t]?.+\n(.+\n)*\n*)+)/gm
@@ -425,7 +425,6 @@ Showdown.converter = function () {
     text = text.replace(/^[ ]{0,2}([ ]?\_[ ]?){3,}[ \t]*$/gm,key)
 
     text = _DoLists(text)
-    text = _DoCodeBlocks(text)
     text = _DoBlockQuotes(text)
 
     // We already ran _HashHTMLBlocks() before, in Markdown(), but that
@@ -784,11 +783,12 @@ Showdown.converter = function () {
     // can use as delimters. If you need three consecutive backticks
     // in your code, use four for delimiters, etc.
     //
-    text = text.replace(re.fenced, function (wholeMatch,m1,m2) {
-             var c = '\0\0\0\0' + m2 + '\0\0\0\0'
+    text = text.replace(re.fenced, function (wholeMatch,m1,m2,m3) {
+             var c = '\0\0\0\0' + m3 + '\0\0\0\0'
              c = c.replace(/\0\0\0\0([ \t\n]*)/,"") // leading whitespace
              c = c.replace(/[ \t]*\0\0\0\0/,"") // trailing whitespace
-             c = _EncodeCode(c, m1)
+             c = c.replace(/\n/g, '\0\0\0\0'); // don't generate <p> and <br> inside
+             c = _EncodeCode(c, m2)
              return "<pre><code>" + c + "</code></pre>"
            })
     return text
@@ -861,6 +861,8 @@ Showdown.converter = function () {
     text = text.replace(/\n+$/g,"")
     // Do code block stuff early
     text = _DoBacktickCodeBlocks(text)
+    text = _DoCodeBlocks(text)
+
     var grafs = text.split(/\n{2,}/g)
     var grafsOut = new Array()
     // Wrap <p> tags.
@@ -889,7 +891,7 @@ Showdown.converter = function () {
         grafsOut[j] = grafsOut[j].replace(/~K\d+K/,blockText)
       }
     }
-    return grafsOut.join("\n\n")
+    return grafsOut.join("\n\n").replace(/\0\0\0\0/g, '\n');
   }
 
   function _EncodeAmpsAndAngles (text) {
