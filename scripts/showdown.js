@@ -425,7 +425,6 @@ Showdown.converter = function () {
     text = text.replace(/^[ ]{0,2}([ ]?\_[ ]?){3,}[ \t]*$/gm,key)
 
     text = _DoLists(text)
-    text = _DoCodeBlocks(text)
     text = _DoBlockQuotes(text)
 
     // We already ran _HashHTMLBlocks() before, in Markdown(), but that
@@ -862,6 +861,8 @@ Showdown.converter = function () {
     text = text.replace(/\n+$/g,"")
     // Do code block stuff early
     text = _DoBacktickCodeBlocks(text)
+    text = _DoCodeBlocks(text)
+
     var grafs = text.split(/\n{2,}/g)
     var grafsOut = new Array()
     // Wrap <p> tags.
